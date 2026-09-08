@@ -36,16 +36,43 @@ jobs:
             any::shiny
             any::shinyMobile
             any::shinylive
+            any::jsonlite
 
       - name: Export shinylive app
         shell: Rscript {0}
         run: |
+          # The manifest is embedded directly as a data: URI in the <link>
+          # tag rather than linked as an external file. Chrome's manifest
+          # fetch mechanism uses a request pattern that shinylive's own
+          # service worker doesn't handle correctly (fails with "'only-if-
+          # cached' can be set only with 'same-origin' mode"), causing the
+          # manifest to silently 404 even though the file exists. A data:
+          # URI resolves immediately with no network request at all, so
+          # there's nothing for that service worker to intercept.
+          manifest_json <- paste0(
+            '{"name":"Hau Moana | Aerial Survey Data Collection",',
+            '"short_name":"Hau Moana",',
+            '"start_url":"https://benst169.github.io/HM_surveyApp/",',
+            '"display":"standalone",',
+            '"orientation":"any",',
+            '"background_color":"#ffffff",',
+            '"theme_color":"#2196f3",',
+            '"icons":[',
+            '{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},',
+            '{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"}',
+            ']}'
+          )
+          manifest_data_uri <- paste0(
+            "data:application/manifest+json;base64,",
+            jsonlite::base64_enc(charToRaw(manifest_json))
+          )
+
           shinylive::export(
             appdir = ".",
             destdir = "site",
             template_params = list(
               include_in_head = paste(
-                '<link rel="manifest" href="manifest.webmanifest">',
+                paste0('<link rel="manifest" href="', manifest_data_uri, '">'),
                 '<meta name="theme-color" content="#2196f3">',
                 '<link rel="icon" href="icons/favicon.png">',
                 '<script src="indexeddb-storage.js"></script>',
