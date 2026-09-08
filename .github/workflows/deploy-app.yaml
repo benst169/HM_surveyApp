@@ -49,6 +49,20 @@ jobs:
           # manifest to silently 404 even though the file exists. A data:
           # URI resolves immediately with no network request at all, so
           # there's nothing for that service worker to intercept.
+          # Icons are embedded the same way (base64 data: URIs) rather than
+          # linked as external files - Chrome's manifest processing failed
+          # to load them too even though they're directly reachable by
+          # normal navigation, matching the same service-worker interaction
+          # problem as the manifest file itself.
+          icon_192_uri <- paste0(
+            "data:image/png;base64,",
+            jsonlite::base64_enc(readBin("icons/icon-192.png", "raw", file.info("icons/icon-192.png")$size))
+          )
+          icon_512_uri <- paste0(
+            "data:image/png;base64,",
+            jsonlite::base64_enc(readBin("icons/icon-512.png", "raw", file.info("icons/icon-512.png")$size))
+          )
+
           manifest_json <- paste0(
             '{"name":"Hau Moana | Aerial Survey Data Collection",',
             '"short_name":"Hau Moana",',
@@ -58,8 +72,8 @@ jobs:
             '"background_color":"#ffffff",',
             '"theme_color":"#2196f3",',
             '"icons":[',
-            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-192.png","sizes":"192x192","type":"image/png"},',
-            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-512.png","sizes":"512x512","type":"image/png"}',
+            '{"src":"', icon_192_uri, '","sizes":"192x192","type":"image/png"},',
+            '{"src":"', icon_512_uri, '","sizes":"512x512","type":"image/png"}',
             ']}'
           )
           manifest_data_uri <- paste0(
