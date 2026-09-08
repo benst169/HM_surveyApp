@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+    }
+    .wrap {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    h1 { font-size: 1.4em; margin-bottom: 8px; }
+    p { max-width: 320px; line-height: 1.4; color: #666; }
+    button {
+      margin-top: 20px;
+      padding: 12px 28px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background: #2196f3;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:active { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>You're offline</h1>
+    <p>This app needs an internet connection to run. Reconnect and tap retry, or it will reload automatically once you're back online.</p>
+    <button onclick="window.location.reload()">Retry</button>
+  </div>
+  <script>
+    // Auto-reload the moment the device reports it's back online.
+    window.addEventListener('online', () => window.location.reload());
+  </script>
+</body>
+</html>
