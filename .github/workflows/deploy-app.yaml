@@ -58,8 +58,8 @@ jobs:
             '"background_color":"#ffffff",',
             '"theme_color":"#2196f3",',
             '"icons":[',
-            '{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},',
-            '{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"}',
+            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-192.png","sizes":"192x192","type":"image/png"},',
+            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-512.png","sizes":"512x512","type":"image/png"}',
             ']}'
           )
           manifest_data_uri <- paste0(
