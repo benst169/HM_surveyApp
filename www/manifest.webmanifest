@@ -1,7 +1,7 @@
 {
   "name": "Hau Moana | Aerial Survey Data Collection",
   "short_name": "Hau Moana",
-  "start_url": "https://github.com/benst169/HM_surveyApp.git/",
+  "start_url": "https://benst169.github.io/HM_surveyApp/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#ffffff",
