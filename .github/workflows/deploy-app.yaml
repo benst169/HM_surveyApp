@@ -1,23 +1,88 @@
-# Workflow derived from https://github.com/posit-dev/r-shinylive/tree/actions-v1/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
-#
-# Basic example of a GitHub Actions workflow that builds a Shiny app and deploys
-# it to GitHub Pages.
+# Custom deploy workflow (replaces the posit-dev/r-shinylive reusable
+# workflow) so we can pass template_params to shinylive::export() - this
+# bakes the manifest link and a mobile-viewport-height fix directly into
+# the initial index.html, rather than relying on our Shiny UI to inject
+# them after R finishes booting inside WebAssembly (which was too late for
+# the browser's PWA-installability check to see them).
 name: Deploy app to gh-pages
 
 on:
-  # Manually trigger the workflow
   workflow_dispatch:
-  # Trigger on push to `main` branch
   push:
     branches: ["main"]
-  # Trigger on pull request to all branches (but do not deploy to gh-pages)
-  pull_request:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  shinylive:
-    uses: posit-dev/r-shinylive/.github/workflows/deploy-app.yaml@actions-v1
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::shiny
+            any::shinyMobile
+            any::shinylive
+
+      - name: Export shinylive app
+        shell: Rscript {0}
+        run: |
+          shinylive::export(
+            appdir = ".",
+            destdir = "site",
+            template_params = list(
+              include_in_head = paste(
+                '<link rel="manifest" href="manifest.webmanifest">',
+                '<meta name="theme-color" content="#2196f3">',
+                '<link rel="icon" href="icons/favicon.png">',
+                '<script src="indexeddb-storage.js"></script>',
+                '<script>',
+                'function hmSetVh() {',
+                '  document.documentElement.style.setProperty("--vh", (window.innerHeight * 0.01) + "px");',
+                '}',
+                'hmSetVh();',
+                'window.addEventListener("resize", hmSetVh);',
+                'window.addEventListener("orientationchange", hmSetVh);',
+                '</script>',
+                '<style>',
+                'html, body, .framework7-root, .view, .view-main {',
+                '  height: 100vh;',
+                '  height: calc(var(--vh, 1vh) * 100);',
+                '  height: 100dvh;',
+                '}',
+                '.toolbar, .tabbar {',
+                '  position: fixed !important;',
+                '  bottom: 0 !important;',
+                '}',
+                '</style>',
+                sep = "\n"
+              )
+            )
+          )
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

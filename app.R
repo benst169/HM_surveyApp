@@ -15,36 +15,18 @@ ui <- f7Page(
   ),
   allowPWA = FALSE,   # shinylive registers its own essential service worker;
                       # a second one from shinyMobile would conflict with it
-  tags$head(
-    tags$link(rel = "manifest", href = "manifest.webmanifest"),
-    tags$meta(name = "theme-color", content = "#2196f3"),
-    tags$link(rel = "icon", href = "icons/favicon.png"),
-    tags$script(src = "indexeddb-storage.js"),
-    tags$script(HTML("
-      function hmSetVh() {
-        document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
-      }
-      hmSetVh();
-      window.addEventListener('resize', hmSetVh);
-      window.addEventListener('orientationchange', hmSetVh);
-    ")),
-    tags$style(HTML("
-      html, body, .framework7-root, .view, .view-main {
-        height: 100vh;
-        height: calc(var(--vh, 1vh) * 100);
-        height: 100dvh;
-      }
-      .toolbar, .tabbar {
-        position: fixed !important;
-        bottom: 0 !important;
-      }
-    "))
-  ),
+  # Manifest link, viewport-height fix, and indexeddb-storage.js are now
+  # injected directly into the exported index.html's <head> at build time
+  # (see .github/workflows/deploy-app.yaml's template_params) rather than
+  # here - this UI only renders after R finishes booting inside WebAssembly,
+  # several seconds after the page first loads, which was too late for the
+  # browser's installability check and the viewport fix to take effect.
   
   f7TabLayout(
     navbar = f7Navbar(
       title = "Hau Moana | Aerial Survey Data Collection",
-      hairline = TRUE
+      hairline = TRUE,
+      shadow = TRUE
     ),
     
     f7Tabs(
