@@ -19,7 +19,26 @@ ui <- f7Page(
     tags$link(rel = "manifest", href = "manifest.webmanifest"),
     tags$meta(name = "theme-color", content = "#2196f3"),
     tags$link(rel = "icon", href = "icons/favicon.png"),
-    tags$script(src = "indexeddb-storage.js")
+    tags$script(src = "indexeddb-storage.js"),
+    tags$script(HTML("
+      function hmSetVh() {
+        document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+      }
+      hmSetVh();
+      window.addEventListener('resize', hmSetVh);
+      window.addEventListener('orientationchange', hmSetVh);
+    ")),
+    tags$style(HTML("
+      html, body, .framework7-root, .view, .view-main {
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        height: 100dvh;
+      }
+      .toolbar, .tabbar {
+        position: fixed !important;
+        bottom: 0 !important;
+      }
+    "))
   ),
   
   f7TabLayout(
