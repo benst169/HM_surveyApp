@@ -56,11 +56,11 @@ jobs:
           # problem as the manifest file itself.
           icon_192_uri <- paste0(
             "data:image/png;base64,",
-            jsonlite::base64_enc(readBin("icons/icon-192.png", "raw", file.info("icons/icon-192.png")$size))
+            gsub("[\r\n]", "", jsonlite::base64_enc(readBin("icons/icon-192.png", "raw", file.info("icons/icon-192.png")$size))
           )
           icon_512_uri <- paste0(
             "data:image/png;base64,",
-            jsonlite::base64_enc(readBin("icons/icon-512.png", "raw", file.info("icons/icon-512.png")$size))
+            gsub("[\r\n]", "", jsonlite::base64_enc(readBin("icons/icon-512.png", "raw", file.info("icons/icon-512.png")$size))
           )
 
           manifest_json <- paste0(
@@ -78,7 +78,7 @@ jobs:
           )
           manifest_data_uri <- paste0(
             "data:application/manifest+json;base64,",
-            jsonlite::base64_enc(charToRaw(manifest_json))
+            gsub("[\r\n]", "", jsonlite::base64_enc(charToRaw(manifest_json))
           )
 
           shinylive::export(
