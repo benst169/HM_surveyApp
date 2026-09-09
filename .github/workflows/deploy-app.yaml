@@ -81,6 +81,14 @@ jobs:
             gsub("[\r\n]", "", jsonlite::base64_enc(charToRaw(manifest_json)))
           )
 
+          # Cache-busting suffix based on the commit SHA - ensures GitHub's
+          # CDN (Fastly) always treats this as a new URL on each deploy,
+          # rather than potentially serving a stale cached response (this
+          # includes cached 404s, which don't clear just by clearing your
+          # own browser's cache/incognito - that only affects your browser,
+          # not the CDN layer in between).
+          cache_bust <- Sys.getenv("GITHUB_SHA", unset = as.character(Sys.time()))
+
           shinylive::export(
             appdir = ".",
             destdir = "site",
@@ -89,7 +97,7 @@ jobs:
                 paste0('<link rel="manifest" href="', manifest_data_uri, '">'),
                 '<meta name="theme-color" content="#2196f3">',
                 '<link rel="icon" href="icons/favicon.png">',
-                '<script src="indexeddb-storage.js"></script>',
+                paste0('<script src="indexeddb-storage.js?v=', cache_bust, '"></script>'),
                 '<script>',
                 'function hmSetVh() {',
                 '  document.documentElement.style.setProperty("--vh", (window.innerHeight * 0.01) + "px");',
