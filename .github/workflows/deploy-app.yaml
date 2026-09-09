@@ -72,8 +72,8 @@ jobs:
             '"background_color":"#ffffff",',
             '"theme_color":"#2196f3",',
             '"icons":[',
-            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-192.png","sizes":"192x192","type":"image/png"},',
-            '{"src":"https://benst169.github.io/HM_surveyApp/icons/icon-512.png","sizes":"512x512","type":"image/png"}',
+            '{"src":"', icon_192_uri, '","sizes":"192x192","type":"image/png"},',
+            '{"src":"', icon_512_uri, '","sizes":"512x512","type":"image/png"}',
             ']}'
           )
           manifest_data_uri <- paste0(
@@ -121,11 +121,16 @@ jobs:
               )
             )
           )
-          
+
           dir.create(file.path("site", "icons"), recursive = TRUE, showWarnings = FALSE)
           file.copy(
             list.files("icons", full.names = TRUE),
             file.path("site", "icons"),
+            overwrite = TRUE
+          )
+          file.copy(
+            "indexeddb-storage.js",
+            file.path("site", "indexeddb-storage.js"),
             overwrite = TRUE
           )
 
