@@ -3,6 +3,48 @@
 // entirely client-side via shinylive - Shiny's JS<->R messaging channel is
 // the same either way.
 
+// --- TEMPORARY on-screen debug log -----------------------------------
+// Remote devtools access is blocked on the test tablet (organizational
+// device policy), so this prints key checkpoints directly on screen
+// instead of to the console. Safe to delete once diagnosis is done.
+const hmPendingLogs = [];
+function hmDebugInit() {
+  if (document.getElementById("hm-debug-box")) return;
+  const box = document.createElement("div");
+  box.id = "hm-debug-box";
+  box.style.cssText =
+    "position:fixed;top:0;left:0;right:0;max-height:35vh;overflow-y:auto;" +
+    "background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;" +
+    "font-size:10px;z-index:999999;padding:4px;white-space:pre-wrap;";
+  document.body.appendChild(box);
+}
+function hmDebug(msg) {
+  const line = new Date().toLocaleTimeString() + " - " + msg;
+  if (!document.body) {
+    hmPendingLogs.push(line);
+    return;
+  }
+  hmDebugInit();
+  const box = document.getElementById("hm-debug-box");
+  const div = document.createElement("div");
+  div.textContent = line;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+document.addEventListener("DOMContentLoaded", function () {
+  hmDebugInit();
+  const box = document.getElementById("hm-debug-box");
+  hmPendingLogs.forEach(function (line) {
+    const div = document.createElement("div");
+    div.textContent = line;
+    box.appendChild(div);
+  });
+  hmPendingLogs.length = 0;
+});
+// --- end debug log helper ---------------------------------------------
+
+hmDebug("indexeddb-storage.js script started executing");
+
 const HM_DB_NAME = "hauMoanaDB";
 const HM_STORE_NAME = "records";
 
@@ -13,9 +55,16 @@ const hmDbPromise = new Promise((resolve, reject) => {
     if (!db.objectStoreNames.contains(HM_STORE_NAME)) {
       db.createObjectStore(HM_STORE_NAME, { keyPath: "id", autoIncrement: true });
     }
+    hmDebug("IndexedDB onupgradeneeded ran (store created/verified)");
   };
-  request.onsuccess = (event) => resolve(event.target.result);
-  request.onerror = (event) => reject(event.target.error);
+  request.onsuccess = (event) => {
+    hmDebug("IndexedDB opened successfully");
+    resolve(event.target.result);
+  };
+  request.onerror = (event) => {
+    hmDebug("IndexedDB open FAILED: " + event.target.error);
+    reject(event.target.error);
+  };
 });
 
 function hmAddRecord(row) {
@@ -23,8 +72,14 @@ function hmAddRecord(row) {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(HM_STORE_NAME, "readwrite");
       tx.objectStore(HM_STORE_NAME).add(row);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => {
+        hmDebug("Record saved to IndexedDB OK");
+        resolve();
+      };
+      tx.onerror = () => {
+        hmDebug("Record save FAILED: " + tx.error);
+        reject(tx.error);
+      };
     });
   });
 }
@@ -41,7 +96,7 @@ function hmGetAllRecords() {
 }
 
 function hmShowCsv(records, filename) {
-  console.log("hmShowCsv called with", records.length, "records, filename:", filename);
+  hmDebug("hmShowCsv called with " + records.length + " records");
   if (records.length === 0) {
     alert("No records saved yet - nothing to export.");
     return;
@@ -53,9 +108,6 @@ function hmShowCsv(records, filename) {
   const rows = records.map((r) => cols.map((c) => escape(r[c])).join(","));
   const csv = [header, ...rows].join("\n");
 
-  // Build (or reuse) a full-screen panel showing the CSV as selectable text.
-  // This works regardless of any download/clipboard permission restrictions -
-  // worst case, the user reads or manually selects the text.
   let panel = document.getElementById("hm-export-panel");
   if (!panel) {
     panel = document.createElement("div");
@@ -107,7 +159,6 @@ function hmShowCsv(records, filename) {
   ta.value = csv;
   ta.select();
 
-  // Also attempt a normal download - harmless if blocked, convenient if not.
   try {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -118,30 +169,31 @@ function hmShowCsv(records, filename) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    hmDebug("Automatic download attempted");
   } catch (err) {
-    console.warn("Automatic download failed - use the on-screen copy panel instead:", err);
+    hmDebug("Automatic download failed: " + err.message);
   }
 }
 
+hmDebug("Waiting for shiny:connected event...");
+
 $(document).on("shiny:connected", function () {
-  // R calls this after every record - persist it immediately.
+  hmDebug("shiny:connected fired - registering message handlers");
+
   Shiny.addCustomMessageHandler("hm_save_record", function (row) {
+    hmDebug("hm_save_record message received from R");
     hmAddRecord(row);
   });
 
-  // R calls this when the "Export CSV" button is pressed.
   Shiny.addCustomMessageHandler("hm_export_csv", function (msg) {
-    console.log("hm_export_csv message received from R:", msg);
+    hmDebug("hm_export_csv message received from R");
     hmGetAllRecords().then((records) => hmShowCsv(records, msg.filename));
   });
 
-  // On every page load, hand back whatever's already stored so the on-screen
-  // table can be rebuilt - this is what makes a reload mid-survey non-scary.
-  // Sent as a JSON string (not a raw object array) so R parses it explicitly
-  // with simplifyDataFrame = FALSE, rather than relying on Shiny's default
-  // input-value simplification, which behaves differently depending on how
-  // many records there are and was silently crashing the session.
   hmGetAllRecords().then((records) => {
+    hmDebug("Restore check found " + records.length + " existing record(s)");
     Shiny.setInputValue("restored_records_json", JSON.stringify(records));
+  }).catch((err) => {
+    hmDebug("Restore check FAILED: " + err);
   });
 });

@@ -233,7 +233,7 @@ ui <- f7Page(
             p(f7Select(
               inputId = "BF",
               label = "Beaufort sea state",
-              choices = c(1:6,""),
+              choices = c(0:6,""),
               selected = ""),
               f7Select(
                 inputId = "Glr.int",
@@ -258,7 +258,7 @@ ui <- f7Page(
               f7Select(
                 inputId = "CC",
                 label = "Cloud cover (eighths)",
-                choices = c("1/8","2/8","3/8","4/8","5/8","6/8","7/8","8/8",""),
+                choices = c("0/8","1/8","2/8","3/8","4/8","5/8","6/8","7/8","8/8",""),
                 selected = ""),
               f7Text(
                 inputId = "E.notes",
